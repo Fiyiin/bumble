@@ -1,5 +1,6 @@
+import 'package:bumble/home_screen.dart';
+import 'package:bumble/utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 
 void main() {
   runApp(MyApp());
@@ -41,31 +42,24 @@ class _NavigationHandlerState extends State<NavigationHandler> {
         },
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: buildNavbarIcon('profile', 0xffD8D8D8),
-            activeIcon: buildNavbarIcon('profile', 0xff979797),
+            icon: buildSvgIcon('profile', color: 0xffD8D8D8),
+            activeIcon: buildSvgIcon('profile', color: 0xff979797),
             title: Text('Profile'),
           ),
           BottomNavigationBarItem(
-            icon: buildNavbarIcon('home', 0xffD8D8D8),
-            activeIcon: buildNavbarIcon('home', 0xff979797),
+            icon: buildSvgIcon('home', color: 0xffD8D8D8),
+            activeIcon: buildSvgIcon('home', color: 0xff979797),
             title: Text('Home'),
           ),
           BottomNavigationBarItem(
-            icon: buildNavbarIcon('chat', 0xffD8D8D8),
-            activeIcon: buildNavbarIcon('chat', 0xff979797),
+            icon: buildSvgIcon('chat', color: 0xffD8D8D8),
+            activeIcon: buildSvgIcon('chat', color: 0xff979797),
             title: Text('Chat'),
           ),
         ],
         type: BottomNavigationBarType.fixed,
       ),
       body: buildPageView(),
-    );
-  }
-
-  SvgPicture buildNavbarIcon(String path, int color) {
-    return SvgPicture.asset(
-      'asset/images/$path.svg',
-      color: Color(color),
     );
   }
 
@@ -90,7 +84,7 @@ class _NavigationHandlerState extends State<NavigationHandler> {
       },
       children: <Widget>[
         DummyScreens('Profile'),
-        DummyScreens('Home'),
+        HomeScreen(),
         DummyScreens('Chat'),
       ],
     );
