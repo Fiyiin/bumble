@@ -79,6 +79,7 @@ class _NavigationHandlerState extends State<NavigationHandler> {
   PageView buildPageView() {
     return PageView(
       controller: _controller,
+      physics: NeverScrollableScrollPhysics(),
       onPageChanged: (int index) {
         pageChanged(index);
       },

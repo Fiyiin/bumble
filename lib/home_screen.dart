@@ -1,4 +1,6 @@
 import 'package:bumble/utils.dart';
+import 'package:bumble/widgets.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -7,7 +9,133 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+enum SwipeDirection { left, right }
+SwipeDirection swipeDirection = SwipeDirection.right;
+
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  List<Widget> dislikedCards = <ImageCard>[];
+  List<Widget> imageCards = <ImageCard>[
+    ImageCard(
+      picturPath: 'girl_1',
+      name: 'Jessie',
+      age: '22',
+      bio: 'Model at Vanity Fair and Earth wanderer',
+    ),
+    ImageCard(
+      picturPath: 'girl_2',
+      name: 'Letitia',
+      age: '27',
+      bio: 'Professional Photographer at Nature',
+    ),
+    ImageCard(
+      picturPath: 'girl_3',
+      name: 'Melisa',
+      age: '23',
+      bio: '',
+    ),
+    ImageCard(
+      picturPath: 'girl_4',
+      name: 'Bianca',
+      age: '26',
+      bio: 'Fitness Instructor, YouTube & Peleton Content Creator',
+    ),
+    ImageCard(
+      picturPath: 'girl_5',
+      name: 'Tisa',
+      age: '31',
+      bio: 'Sac State 2018',
+    ),
+    ImageCard(
+      picturPath: 'girl_6',
+      name: 'Rosie',
+      age: '24',
+      bio: 'Cyber Security Analyst',
+    ),
+  ];
+  AnimationController _rotationController;
+  AnimationController _translationController;
+
+  FlowAnimationDelegate _delegate;
+
+  void _startAnimation() {
+    // if (_translationController.isAnimating && _rotationController.isAnimating) {
+    //   _translationController.stop();
+    //   _rotationController.stop();
+    //   return;
+    // }
+    _translationController.reset();
+    _rotationController.reset();
+    _translationController.forward();
+    _rotationController.forward();
+  }
+
+  void onAnimationComplete(AnimationStatus _) {
+    if (_translationController.status == AnimationStatus.completed &&
+        _rotationController.status == AnimationStatus.completed) {
+      imageCards.removeLast();
+    }
+  }
+
+  Widget handleSwipe(Widget imageCard) {
+    return GestureDetector(
+      dragStartBehavior: DragStartBehavior.start,
+      onPanEnd: (details) {
+        if (details.velocity.pixelsPerSecond.dx > 0) {
+          if (imageCards.isNotEmpty) {
+            setState(() {
+              swipeDirection = SwipeDirection.right;
+            });
+            _startAnimation();
+          }
+        } else if (details.velocity.pixelsPerSecond.dx < 0) {
+          if (imageCards.isNotEmpty) {
+            setState(() {
+              swipeDirection = SwipeDirection.left;
+            });
+            _startAnimation();
+          }
+        }
+      },
+      child: imageCard,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _rotationController = AnimationController(
+      vsync: this,
+      lowerBound: 0.0,
+      upperBound: math.pi / 12,
+      duration: Duration(milliseconds: 500),
+    );
+
+    _translationController = AnimationController(
+      vsync: this,
+      lowerBound: 0.0,
+      upperBound: 1.5,
+      duration: Duration(milliseconds: 500),
+    );
+
+    _rotationController.addStatusListener(onAnimationComplete);
+
+    _translationController.addStatusListener(onAnimationComplete);
+
+    _delegate = FlowAnimationDelegate(
+      rotateAnimation: _rotationController,
+      translateAnimation: _translationController,
+      ctx: context,
+      imageCards: imageCards,
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _translationController.dispose();
+    _rotationController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -35,15 +163,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(height: 10),
               Expanded(
-                child: Stack(
-                  children: [
-                    ImageCard(
-                      picturPath: 'girl_1',
-                      name: 'Jessie',
-                      age: '22',
-                      bio: 'Model at Vanity Fair and Earth wanderer',
-                    ),
-                  ],
+                child: Flow(
+                  delegate: _delegate,
+                  children: imageCards
+                      .map<Widget>((imageCard) => handleSwipe(imageCard))
+                      .toList(),
                 ),
               ),
             ],
@@ -93,197 +217,55 @@ class Header extends StatelessWidget {
   }
 }
 
-class ImageCard extends StatelessWidget {
-  final String picturPath;
-  final String name;
-  final String age;
-  final String bio;
+class FlowAnimationDelegate extends FlowDelegate {
+  FlowAnimationDelegate({
+    this.rotateAnimation,
+    this.translateAnimation,
+    this.ctx,
+    this.imageCards,
+  }) : super(repaint: translateAnimation);
 
-  const ImageCard({
-    Key key,
-    this.picturPath,
-    this.name,
-    this.age,
-    this.bio,
-  }) : super(key: key);
+  final Animation<double> rotateAnimation;
+  final Animation<double> translateAnimation;
+  final BuildContext ctx;
+  final List<ImageCard> imageCards;
 
   @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            image: DecorationImage(
-              image: AssetImage(
-                'asset/images/$picturPath.jpg',
-              ),
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: <Color>[
-                Color(0xcc000000),
-                Color(0x00000000),
-                Color(0x00000000),
-                Color(0xcc000000)
-              ],
-              tileMode: TileMode.clamp,
-            ),
-          ),
-        ),
-        Positioned(
-          left: 20,
-          top: 30,
-          child: buildSvgIcon('quotes'),
-        ),
-        Positioned(
-          right: -15,
-          top: 70,
-          child: BumbleBar(
-            angle: math.pi / 2,
-            color: Colors.grey[350],
-            foregroundColor: Color(0x88F2F2F2),
-            width: 80,
-          ),
-        ),
-        Positioned(
-          bottom: 20,
-          left: 20,
-          child: Container(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      height: 20,
-                      padding: EdgeInsets.only(top: 5),
-                      child: buildSvgIcon('verified'),
-                    ),
-                    Text(
-                      '$name,',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(
-                      width: 4,
-                    ),
-                    Text(
-                      age,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  width: 250,
-                  child: Text(
-                    bio,
-                    softWrap: true,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      height: 1.4,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 6),
-                Container(
-                  height: 30,
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      color: Colors.black26),
-                  child: Row(
-                    children: [
-                      Container(
-                        height: 16,
-                        padding: EdgeInsets.only(left: 5, right: 5),
-                        child: buildSvgIcon(
-                          'smiley',
-                          color: 0xffFFFFFF,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Text(
-                          'React to photo',
-                          style: TextStyle(
-                            fontSize: 14,
-                            // fontWeight: FontWeight.w600,
-                            height: 1.4,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
-        )
-      ],
-    );
+  bool shouldRepaint(FlowAnimationDelegate oldDelegate) {
+    return translateAnimation != oldDelegate.translateAnimation;
   }
-}
-
-class BumbleBar extends StatelessWidget {
-  final Color color;
-  final Color foregroundColor;
-  final double angle;
-  final double width;
-
-  const BumbleBar({
-    this.color,
-    this.foregroundColor,
-    this.angle = 0,
-    this.width,
-    Key key,
-  }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: angle,
-      child: Stack(
-        children: [
-          Container(
-            width: width,
-            height: 4,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: foregroundColor,
-            ),
+  void paintChildren(FlowPaintingContext context) {
+    double dx = 0.0;
+    if (rotateAnimation.status == AnimationStatus.forward) {
+      // return;
+    }
+    for (int i = 0; i < context.childCount; ++i) {
+      dx = MediaQuery.of(ctx).size.width;
+      // number of elements in the array, counting from 0
+      int elemsInArray = (context.childCount - 1);
+      if (rotateAnimation.status == AnimationStatus.forward) {
+        // return;
+      }
+      context.paintChild(
+        i,
+        transform: Matrix4.translationValues(
+            i != elemsInArray
+                ? 0
+                : swipeDirection == SwipeDirection.right
+                    ? dx * translateAnimation.value
+                    : -dx * translateAnimation.value,
+            0,
+            0)
+          ..setRotationZ(
+            i != elemsInArray
+                ? 0
+                : swipeDirection == SwipeDirection.right
+                    ? rotateAnimation.value * 1.5
+                    : (-rotateAnimation.value),
           ),
-          Positioned(
-            child: Container(
-              width: width * (1 / 8),
-              height: 4,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  bottomLeft: Radius.circular(10),
-                ),
-                color: color,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+      );
+    }
   }
 }
