@@ -4,15 +4,20 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 enum SwipeDirection { left, right }
-SwipeDirection swipeDirection = SwipeDirection.right;
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  Animation<Offset> moveRight;
+  Animation<Offset> moveLeft;
+  AnimationController _controller;
+
   List<Widget> dislikedCards = <ImageCard>[];
   List<Widget> imageCards = <ImageCard>[
     ImageCard(
@@ -52,31 +57,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       bio: 'Cyber Security Analyst',
     ),
   ];
-  AnimationController _rotationController;
-  AnimationController _translationController;
 
-  FlowAnimationDelegate _delegate;
+  SwipeDirection swipeDirection = SwipeDirection.right;
 
-  void _startAnimation() {
-    // if (_translationController.isAnimating && _rotationController.isAnimating) {
-    //   _translationController.stop();
-    //   _rotationController.stop();
-    //   return;
-    // }
-    _translationController.reset();
-    _rotationController.reset();
-    _translationController.forward();
-    _rotationController.forward();
-  }
+  bool _leftVisibility = false;
+  bool _rightVisibility = false;
 
-  void onAnimationComplete(AnimationStatus _) {
-    if (_translationController.status == AnimationStatus.completed &&
-        _rotationController.status == AnimationStatus.completed) {
-      imageCards.removeLast();
+  Future<void> _playAnimation() async {
+    try {
+      await _controller.forward().orCancel;
+    } on TickerCanceled {
+      // the animation got canceled, probably because we were disposed
     }
   }
 
-  Widget handleSwipe(Widget imageCard) {
+  Widget handleSwipe(Widget child) {
     return GestureDetector(
       dragStartBehavior: DragStartBehavior.start,
       onPanEnd: (details) {
@@ -84,56 +79,66 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           if (imageCards.isNotEmpty) {
             setState(() {
               swipeDirection = SwipeDirection.right;
+              _rightVisibility = true;
             });
-            _startAnimation();
+            _playAnimation();
           }
         } else if (details.velocity.pixelsPerSecond.dx < 0) {
           if (imageCards.isNotEmpty) {
             setState(() {
               swipeDirection = SwipeDirection.left;
+              _leftVisibility = true;
             });
-            _startAnimation();
+            _playAnimation();
           }
         }
       },
-      child: imageCard,
+      child: child,
     );
   }
 
   @override
   void initState() {
     super.initState();
-    _rotationController = AnimationController(
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
-      lowerBound: 0.0,
-      upperBound: math.pi / 12,
-      duration: Duration(milliseconds: 500),
     );
-
-    _translationController = AnimationController(
-      vsync: this,
-      lowerBound: 0.0,
-      upperBound: 1.5,
-      duration: Duration(milliseconds: 500),
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _controller.reset();
+        imageCards.removeLast();
+        setState(() {
+          _leftVisibility = false;
+          _rightVisibility = false;
+        });
+      }
+    });
+    moveLeft = Tween<Offset>(
+      begin: Offset(0, 0),
+      end: Offset(-1.5, 0),
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.2, 0.5, curve: Curves.ease),
+      ),
     );
-
-    _rotationController.addStatusListener(onAnimationComplete);
-
-    _translationController.addStatusListener(onAnimationComplete);
-
-    _delegate = FlowAnimationDelegate(
-      rotateAnimation: _rotationController,
-      translateAnimation: _translationController,
-      ctx: context,
-      imageCards: imageCards,
+    moveRight = Tween<Offset>(
+      begin: Offset(0, 0),
+      end: Offset(1.5, 0),
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.2, 0.5, curve: Curves.ease),
+      ),
     );
   }
 
   @override
   void dispose() {
     super.dispose();
-    _translationController.dispose();
-    _rotationController.dispose();
+    _controller.dispose();
   }
 
   @override
@@ -147,29 +152,65 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             bottom: 8.0,
             top: 16,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Stack(
             children: [
-              Column(
-                children: [
-                  Header(),
-                  SizedBox(height: 10),
-                  BumbleBar(
-                    width: 150,
-                    color: Colors.amber,
-                    foregroundColor: Color(0xffF2F2F2),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              Expanded(
-                child: Flow(
-                  delegate: _delegate,
-                  children: imageCards
-                      .map<Widget>((imageCard) => handleSwipe(imageCard))
-                      .toList(),
+              Positioned(
+                child: Column(
+                  children: [
+                    Header(),
+                    SizedBox(height: 10),
+                    BumbleBar(
+                      width: 150,
+                      color: Colors.amber,
+                      foregroundColor: Color(0xffF2F2F2),
+                    ),
+                  ],
                 ),
               ),
+              Positioned.fill(
+                top: 50,
+                child: handleSwipe(
+                  SwipeAnimation(
+                    controller: _controller.view,
+                    cards: imageCards,
+                    direction: swipeDirection,
+                  ),
+                ),
+              ),
+              Visibility(
+                visible: _leftVisibility,
+                child: SlideTransition(
+                  position: moveLeft,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 24.0),
+                      child: SvgPicture.asset(
+                        'asset/images/x.svg',
+                        width: 80,
+                        height: 80,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Visibility(
+                visible: _rightVisibility,
+                child: SlideTransition(
+                  position: moveRight,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 24.0),
+                      child: SvgPicture.asset(
+                        'asset/images/check.svg',
+                        width: 80,
+                        height: 80,
+                      ),
+                    ),
+                  ),
+                ),
+              )
             ],
           ),
         ),
@@ -237,12 +278,12 @@ class FlowAnimationDelegate extends FlowDelegate {
 
   @override
   void paintChildren(FlowPaintingContext context) {
-    double dx = 0.0;
+    double width = 0.0;
     if (rotateAnimation.status == AnimationStatus.forward) {
       // return;
     }
     for (int i = 0; i < context.childCount; ++i) {
-      dx = MediaQuery.of(ctx).size.width;
+      width = MediaQuery.of(ctx).size.width;
       // number of elements in the array, counting from 0
       int elemsInArray = (context.childCount - 1);
       if (rotateAnimation.status == AnimationStatus.forward) {
@@ -251,21 +292,70 @@ class FlowAnimationDelegate extends FlowDelegate {
       context.paintChild(
         i,
         transform: Matrix4.translationValues(
-            i != elemsInArray
-                ? 0
-                : swipeDirection == SwipeDirection.right
-                    ? dx * translateAnimation.value
-                    : -dx * translateAnimation.value,
-            0,
-            0)
+            i != elemsInArray ? 0 : width * translateAnimation.value, 0, 0)
           ..setRotationZ(
-            i != elemsInArray
-                ? 0
-                : swipeDirection == SwipeDirection.right
-                    ? rotateAnimation.value * 1.5
-                    : (-rotateAnimation.value),
+            i != elemsInArray ? 0 : rotateAnimation.value * math.pi / 6,
           ),
       );
     }
+  }
+}
+
+class SwipeAnimation extends StatelessWidget {
+  final List<ImageCard> cards;
+  final AnimationController controller;
+  final Animation<double> angle;
+  final Animation<double> translation;
+  final Animation<double> opacity;
+  final SwipeDirection direction;
+
+  SwipeAnimation({Key key, this.controller, this.cards, this.direction})
+      : angle = Tween<double>(
+          begin: 0.0,
+          end: direction == SwipeDirection.left ? -math.pi / 6 : math.pi / 6,
+        ).animate(
+          CurvedAnimation(
+            parent: controller,
+            curve: Interval(0.0, 1.0, curve: Curves.ease),
+          ),
+        ),
+        translation = Tween<double>(
+          begin: 0.0,
+          end: direction == SwipeDirection.left ? -1.5 : 1.5,
+        ).animate(
+          CurvedAnimation(
+            parent: controller,
+            curve: Interval(0.0, 1.0, curve: Curves.ease),
+          ),
+        ),
+        opacity = Tween<double>(
+          begin: 0.0,
+          end: 1.5,
+        ).animate(
+          CurvedAnimation(
+            parent: controller,
+            curve: Interval(0.0, 1.0, curve: Curves.ease),
+          ),
+        ),
+        super(key: key);
+
+  Widget _buildAnimation(BuildContext context, Widget child) {
+    return Flow(
+      delegate: FlowAnimationDelegate(
+        ctx: context,
+        rotateAnimation: angle,
+        translateAnimation: translation,
+      ),
+      children: cards.map<Widget>((imageCard) => imageCard).toList(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print(direction);
+    return AnimatedBuilder(
+      animation: controller,
+      builder: _buildAnimation,
+    );
   }
 }
