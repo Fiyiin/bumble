@@ -10,13 +10,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'Bumble',
-        theme: ThemeData(
-          primarySwatch: Colors.yellow,
-          canvasColor: Colors.white,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-        ),
-        home: NavigationHandler());
+      title: 'Bumble',
+      theme: ThemeData(
+        primarySwatch: Colors.yellow,
+        canvasColor: Colors.white,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: NavigationHandler(),
+    );
   }
 }
 
@@ -26,40 +27,45 @@ class NavigationHandler extends StatefulWidget {
 }
 
 class _NavigationHandlerState extends State<NavigationHandler> {
-  final _controller = PageController(initialPage: 0, keepPage: true);
-  int _navbarIndex = 0;
+  final _controller = PageController(initialPage: 1, keepPage: true);
+  int _navbarIndex = 1;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: BottomNavigationBar(
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        selectedFontSize: 20,
-        currentIndex: _navbarIndex,
-        onTap: (index) {
-          navbartapped(index);
-        },
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: buildSvgIcon('profile', color: 0xffD8D8D8),
-            activeIcon: buildSvgIcon('profile', color: 0xff979797),
-            title: Text('Profile'),
-          ),
-          BottomNavigationBarItem(
-            icon: buildSvgIcon('home', color: 0xffD8D8D8),
-            activeIcon: buildSvgIcon('home', color: 0xff979797),
-            title: Text('Home'),
-          ),
-          BottomNavigationBarItem(
-            icon: buildSvgIcon('chat', color: 0xffD8D8D8),
-            activeIcon: buildSvgIcon('chat', color: 0xff979797),
-            title: Text('Chat'),
-          ),
-        ],
-        type: BottomNavigationBarType.fixed,
-      ),
+      bottomNavigationBar: buildBottomNavigationBar(),
       body: buildPageView(),
+    );
+  }
+
+  BottomNavigationBar buildBottomNavigationBar() {
+    return BottomNavigationBar(
+      key: Key('bottomNavBar'),
+      showSelectedLabels: false,
+      showUnselectedLabels: false,
+      selectedFontSize: 20,
+      currentIndex: _navbarIndex,
+      onTap: (index) {
+        navbartapped(index);
+      },
+      items: <BottomNavigationBarItem>[
+        BottomNavigationBarItem(
+          icon: buildSvgIcon('profile', color: 0xffD8D8D8),
+          activeIcon: buildSvgIcon('profile', color: 0xff979797),
+          title: Text('Profile'),
+        ),
+        BottomNavigationBarItem(
+          icon: buildSvgIcon('home', color: 0xffD8D8D8),
+          activeIcon: buildSvgIcon('home', color: 0xff979797),
+          title: Text('Home'),
+        ),
+        BottomNavigationBarItem(
+          icon: buildSvgIcon('chat', color: 0xffD8D8D8),
+          activeIcon: buildSvgIcon('chat', color: 0xff979797),
+          title: Text('Chat'),
+        ),
+      ],
+      type: BottomNavigationBarType.fixed,
     );
   }
 
@@ -78,6 +84,7 @@ class _NavigationHandlerState extends State<NavigationHandler> {
 
   PageView buildPageView() {
     return PageView(
+      key: Key('PageView'),
       controller: _controller,
       physics: NeverScrollableScrollPhysics(),
       onPageChanged: (int index) {

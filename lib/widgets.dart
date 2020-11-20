@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 class ImageCard extends StatelessWidget {
-  final String picturPath;
+  final String picturePath;
   final String name;
   final String age;
   final String bio;
 
   const ImageCard({
     Key key,
-    this.picturPath,
+    this.picturePath,
     this.name,
     this.age,
     this.bio,
@@ -25,7 +25,7 @@ class ImageCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(15),
             image: DecorationImage(
               image: AssetImage(
-                'asset/images/$picturPath.jpg',
+                'asset/images/$picturePath.jpg',
               ),
               fit: BoxFit.cover,
             ),
@@ -38,10 +38,12 @@ class ImageCard extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: <Color>[
-                Color(0xcc000000),
+                Color(0x73000000),
                 Color(0x00000000),
                 Color(0x00000000),
-                Color(0xcc000000)
+                Color(0x00000000),
+                Color(0x00000000),
+                Color(0xbf000000)
               ],
               tileMode: TileMode.clamp,
             ),
@@ -78,6 +80,7 @@ class ImageCard extends StatelessWidget {
                     ),
                     Text(
                       '$name,',
+                      key: Key('name'),
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
@@ -190,6 +193,45 @@ class BumbleBar extends StatelessWidget {
                 color: color,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class Header extends StatelessWidget {
+  const Header({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(
+            Icons.favorite,
+            size: 25,
+            color: Color(0xff979797),
+          ),
+          Column(
+            children: [
+              Text(
+                'bumble',
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.5,
+                  fontSize: 24,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(
+            child: buildSvgIcon('filter'),
           ),
         ],
       ),
