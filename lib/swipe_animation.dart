@@ -2,7 +2,7 @@ import 'package:bumble/widgets.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-enum SwipeDirection { left, right }
+enum SwipeDirection { left, right, none }
 
 class FlowAnimationDelegate extends FlowDelegate {
   FlowAnimationDelegate({
@@ -52,7 +52,6 @@ class SwipeAnimation extends StatelessWidget {
   final AnimationController controller;
   final Animation<double> angle;
   final Animation<double> translation;
-  final Animation<double> opacity;
   final SwipeDirection direction;
 
   SwipeAnimation({Key key, this.controller, this.cards, this.direction})
@@ -62,7 +61,7 @@ class SwipeAnimation extends StatelessWidget {
         ).animate(
           CurvedAnimation(
             parent: controller,
-            curve: Interval(0.0, 1.0, curve: Curves.ease),
+            curve: Interval(0.0, 1.0, curve: Curves.linear),
           ),
         ),
         translation = Tween<double>(
@@ -71,16 +70,7 @@ class SwipeAnimation extends StatelessWidget {
         ).animate(
           CurvedAnimation(
             parent: controller,
-            curve: Interval(0.0, 1.0, curve: Curves.ease),
-          ),
-        ),
-        opacity = Tween<double>(
-          begin: 0.0,
-          end: 1.5,
-        ).animate(
-          CurvedAnimation(
-            parent: controller,
-            curve: Interval(0.0, 1.0, curve: Curves.ease),
+            curve: Interval(0.0, 1.0, curve: Curves.linear),
           ),
         ),
         super(key: key);

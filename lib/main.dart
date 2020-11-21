@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Bumble',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.yellow,
         canvasColor: Colors.white,

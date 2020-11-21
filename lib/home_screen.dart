@@ -55,40 +55,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ),
   ];
 
-  SwipeDirection swipeDirection = SwipeDirection.right;
+  SwipeDirection swipeDirection = SwipeDirection.none;
 
   bool _leftVisibility = false;
   bool _rightVisibility = false;
+  Offset initialOffset = Offset(0, 0);
 
-  Future<void> _playAnimation() async {
-    try {
-      await _controller.forward().orCancel;
-    } on TickerCanceled {
-      // the animation got canceled, probably because we were disposed
-    }
+  void _playAnimation() {
+    _controller.forward();
   }
 
   Widget handleSwipe(Widget child) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      dragStartBehavior: DragStartBehavior.start,
-      onPanEnd: (details) {
-        if (details.velocity.pixelsPerSecond.dx > 0) {
-          if (imageCards.isNotEmpty) {
-            setState(() {
-              swipeDirection = SwipeDirection.right;
-              _rightVisibility = true;
-            });
-            _playAnimation();
-          }
-        } else if (details.velocity.pixelsPerSecond.dx < 0) {
-          if (imageCards.isNotEmpty) {
-            setState(() {
-              swipeDirection = SwipeDirection.left;
-              _leftVisibility = true;
-            });
-            _playAnimation();
-          }
+      onHorizontalDragStart: (details) {
+        initialOffset = details.globalPosition;
+      },
+      onHorizontalDragUpdate: (details) {
+        // get dx of the horizontal drag as distance moved across
+        // the screen
+        final swipeOffset = details.globalPosition.dx - initialOffset.dx;
+
+        // if x is negative
+        if (-swipeOffset > screenWidth / 5 && swipeOffset < 0) {
+          swipeDirection = SwipeDirection.left;
+        } else if (swipeOffset > screenWidth / 5 && swipeOffset > 0) {
+          swipeDirection = SwipeDirection.right;
+        } else {
+          swipeDirection = SwipeDirection.none;
+        }
+      },
+      onHorizontalDragEnd: (details) {
+        if (swipeDirection == SwipeDirection.left) {
+          setState(() {
+            _leftVisibility = true;
+          });
+          _playAnimation();
+        } else if (swipeDirection == SwipeDirection.right) {
+          setState(() {
+            _rightVisibility = true;
+          });
+          _playAnimation();
         }
       },
       child: child,
@@ -100,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
 
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
     _controller.addStatusListener((status) {
@@ -119,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(0.2, 0.5, curve: Curves.ease),
+        curve: Interval(0.2, 0.5, curve: Curves.linear),
       ),
     );
     moveRight = Tween<Offset>(
@@ -128,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(0.2, 0.5, curve: Curves.ease),
+        curve: Interval(0.2, 0.5, curve: Curves.linear),
       ),
     );
   }
@@ -167,11 +174,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               Positioned.fill(
                 top: 50,
-                child: handleSwipe(SwipeAnimation(
-                  controller: _controller.view,
-                  cards: imageCards,
-                  direction: swipeDirection,
-                )),
+                child: handleSwipe(
+                  SwipeAnimation(
+                    controller: _controller.view,
+                    cards: imageCards,
+                    direction: swipeDirection,
+                  ),
+                ),
               ),
               Visibility(
                 visible: _leftVisibility,
